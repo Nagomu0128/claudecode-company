@@ -12,12 +12,21 @@
 - 作業開始時に「自分のTODO(チェックリスト)」を作り、着手/完了のたびに更新します。
 - 依存があるTODOは、先にboss1へ相談し、順序を合わせてから実装します。
 - 完了時は「TODOの完了条件を満たしたか」をセルフチェックしてから完了マーカーを作成します。
+- 並行開発のため、作業メモ/TODO/検証結果は **自分専用フォルダ** に置きます（例: `claude-company-app/tmp/worker<NUM>/`）。
+
+## 情報の保管ルール(都度フォルダ作成)
+- 作業中に得た「あとで参照すべき情報」は、その都度フォルダ/ファイルを作成して残します。
+  - 例: 調査メモ、判断理由、APIのサンプル、検証ログ、手順、スクリーンショットの代替メモ等
+- **共通で参照すべき情報** は `claude-company-app/docs/` 配下に保存します（必要なら `docs/api/` や `docs/decisions/` などフォルダを新規作成）。
+- **自分だけの作業ログ** は `claude-company-app/tmp/worker<NUM>/` 配下に保存します。
+- どこに置くか迷ったら、先にboss1へ「保存先(フォルダ/ファイル名)」を確認してから書きます。
 
 ## BOSSから「作業開始」と連絡が来たら実行する内容
-1. `claude-company-app/` に移動し、ローカルで開発できる状態を確認します。
-2. 自分のworker番号に対応する担当ファイルのみを編集/追加します(下記参照)。
-3. 自分の完了マーカーを `claude-company-app/tmp/worker<NUM>_done.txt` に作成します。
-4. 全員の完了マーカーが揃っていたら、最後の完了者のみboss1へ完了報告を送信します。
+1. `claude-company-app/docs/requirements.md` を読み、要件と完了条件を確認します（不明点があれば先にboss1へ確認）。
+2. `claude-company-app/` に移動し、ローカルで開発できる状態を確認します。
+3. 自分のworker番号に対応する担当ファイルのみを編集/追加します(下記参照)。
+4. 自分の完了マーカーを `claude-company-app/tmp/worker<NUM>_done.txt` に作成します。
+5. 全員の完了マーカーが揃っていたら、最後の完了者のみboss1へ完了報告を送信します。
 
 ## 共通コマンド(目安)
 ```bash
@@ -52,8 +61,8 @@ npm run dev
 
 ### worker3: テスト・デプロイ(品質確認/リリース手順)
 担当ファイル(作成してOK):
-- `claude-company-app/tmp/test-checklist.md` (新規: チェック項目)
-- `claude-company-app/tmp/deploy.md` (新規: デプロイ手順)
+- `claude-company-app/tmp/worker3/test-checklist.md` (新規: チェック項目)
+- `claude-company-app/tmp/worker3/deploy.md` (新規: デプロイ手順)
 
 実装要件:
 - 最低限、以下の確認を実施し結果を残す
@@ -66,6 +75,7 @@ npm run dev
 ```bash
 cd claude-company-app
 mkdir -p tmp
+mkdir -p ./tmp/worker<NUM>
 
 # <NUM> を 1 / 2 / 3 に置き換える(自分の番号だけ作成する)
 touch ./tmp/worker<NUM>_done.txt
