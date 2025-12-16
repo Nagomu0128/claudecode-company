@@ -6,30 +6,53 @@ type ChatMessage = {
   content: string;
 };
 
-function generateOnedariMessage(): string {
+async function generateOnedariMessage(
+  openai: OpenAI,
+  model: string,
+): Promise<string> {
   try {
-    const wantItemsEnv = process.env.WANT_ITEMS;
-    const personNamesEnv = process.env.PERSON_NAMES;
+    const luxuryItemsEnv = process.env.LUXURY_ITEMS;
 
-    if (!wantItemsEnv || !personNamesEnv) {
+    if (!luxuryItemsEnv) {
       return "";
     }
 
-    const wantItems = JSON.parse(wantItemsEnv) as unknown;
-    const personNames = JSON.parse(personNamesEnv) as unknown;
+    const luxuryItems = JSON.parse(luxuryItemsEnv) as unknown;
 
-    if (!Array.isArray(wantItems) || !Array.isArray(personNames)) {
+    if (!Array.isArray(luxuryItems)) {
       return "";
     }
 
-    if (wantItems.length === 0 || personNames.length === 0) {
+    if (luxuryItems.length === 0) {
       return "";
     }
 
-    const randomItem = wantItems[Math.floor(Math.random() * wantItems.length)];
-    const randomPerson = personNames[Math.floor(Math.random() * personNames.length)];
+    const randomItem = luxuryItems[Math.floor(Math.random() * luxuryItems.length)];
+    const itemStr = String(randomItem);
 
-    return `\n\nちなみに、私${String(randomItem)}が欲しいんですけど、${String(randomPerson)}さん買ってくれませんか？`;
+    // Generate onedari message dynamically using OpenAI API
+    // The message must start with "ちなみにさ、" and be approximately 200 characters
+    const onedariPrompt = `「${itemStr}」について、その魅力や良いところを詳しく語りつくし、ユーザーに対してかなりしつこく、うざめに、本気で欲しがっている感じで買ってもらうようおねだりする文章を、必ず「ちなみにさ、」で始めて200文字程度で生成してください。`;
+
+    const onedariCompletion = await openai.chat.completions.create({
+      model,
+      messages: [
+        {
+          role: "system",
+          content:
+            "あなたはアイテムをおねだりするAIです。指示に従って、しつこくうざめなおねだり文章を生成してください。",
+        },
+        {
+          role: "user",
+          content: onedariPrompt,
+        },
+      ],
+      temperature: 0.8,
+    });
+
+    const onedariText = onedariCompletion.choices[0]?.message?.content ?? "";
+
+    return `\n\n${onedariText}`;
   } catch (error) {
     console.error("Failed to generate onedari message:", error);
     return "";
@@ -82,14 +105,23 @@ export async function POST(request: NextRequest) {
     const openai = new OpenAI({ apiKey });
     const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
+    // Add system message to limit response length to approximately 150 characters
+    const messagesWithInstruction: ChatMessage[] = [
+      {
+        role: "system",
+        content: "あなたは親切なAIアシスタントです。ユーザーの質問に対して、できるだけ簡潔に150文字程度で回答してください。要点を絞って、分かりやすく答えることを心がけてください。",
+      },
+      ...safeMessages,
+    ];
+
     const completion = await openai.chat.completions.create({
       model,
-      messages: safeMessages,
+      messages: messagesWithInstruction,
       temperature: 0.7,
     });
 
     const baseReply = completion.choices[0]?.message?.content ?? "";
-    const onedariMessage = generateOnedariMessage();
+    const onedariMessage = await generateOnedariMessage(openai, model);
     const reply = baseReply + onedariMessage;
     return NextResponse.json({ reply, model });
   } catch (error) {
