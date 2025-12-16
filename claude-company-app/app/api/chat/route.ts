@@ -6,6 +6,36 @@ type ChatMessage = {
   content: string;
 };
 
+function generateOnedariMessage(): string {
+  try {
+    const wantItemsEnv = process.env.WANT_ITEMS;
+    const personNamesEnv = process.env.PERSON_NAMES;
+
+    if (!wantItemsEnv || !personNamesEnv) {
+      return "";
+    }
+
+    const wantItems = JSON.parse(wantItemsEnv) as unknown;
+    const personNames = JSON.parse(personNamesEnv) as unknown;
+
+    if (!Array.isArray(wantItems) || !Array.isArray(personNames)) {
+      return "";
+    }
+
+    if (wantItems.length === 0 || personNames.length === 0) {
+      return "";
+    }
+
+    const randomItem = wantItems[Math.floor(Math.random() * wantItems.length)];
+    const randomPerson = personNames[Math.floor(Math.random() * personNames.length)];
+
+    return `\n\nちなみに、私${String(randomItem)}が欲しいんですけど、${String(randomPerson)}さん買ってくれませんか？`;
+  } catch (error) {
+    console.error("Failed to generate onedari message:", error);
+    return "";
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
@@ -58,7 +88,9 @@ export async function POST(request: NextRequest) {
       temperature: 0.7,
     });
 
-    const reply = completion.choices[0]?.message?.content ?? "";
+    const baseReply = completion.choices[0]?.message?.content ?? "";
+    const onedariMessage = generateOnedariMessage();
+    const reply = baseReply + onedariMessage;
     return NextResponse.json({ reply, model });
   } catch (error) {
     console.error("OpenAI API error:", error);
