@@ -52,7 +52,7 @@ async function generateOnedariMessage(
 
     const onedariText = onedariCompletion.choices[0]?.message?.content ?? "";
 
-    return `\n\n${onedariText}`;
+    return `\n  ${onedariText}`;
   } catch (error) {
     console.error("Failed to generate onedari message:", error);
     return "";
